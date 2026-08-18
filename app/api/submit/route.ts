@@ -59,6 +59,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Address required" }, { status: 400 })
     }
 
+    // Blocklist gate: silently drop specific leads before any fan-out.
+    // Matches on normalized phone (last-10) OR lowercased email only — never name.
+    // Returns the exact normal success shape so the submitter sees the identical
+    // thank-you flow, but nothing is forwarded to n8n (WEBHOOK_URL) or GoFunnel.
+    const BLOCKLIST = [{ phone: "8312360401", email: "lexhon434@gmail.com" }]
+    const isBlocked = BLOCKLIST.some((b) => b.phone === phone || b.email === email)
+    if (isBlocked) {
+      return NextResponse.json({ success: true })
+    }
+
     // Add server IP to payload
     const payload = { ...data, server_ip: ip }
 
