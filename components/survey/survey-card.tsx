@@ -220,6 +220,37 @@ export function SurveyCard({ phoneDisplay = "(800) 000-0000", phoneHref = "80000
 
   const totalSteps = 8
 
+  // ── Per-step funnel instrumentation (ADDITIVE — does not touch Lead/LeadLowIntent,
+  // qualification/scoring, or the /api/submit path). Fires one DISTINCT trackCustom
+  // event per step the first time that step becomes visible, deduped per session
+  // (in-memory ref + sessionStorage) so refresh/back-button never double-counts.
+  // Distinct event NAMES (not a step param) are used because the Meta pixel /stats
+  // API breaks down by event name, not by custom parameter — see PR for the query.
+  const STEP_EVENTS = [
+    "RivoirStep1_Address",
+    "RivoirStep2_PropertyType",
+    "RivoirStep3_LegalOwner",
+    "RivoirStep4_ListedOnMarket",
+    "RivoirStep5_Timeline",
+    "RivoirStep6_Condition",
+    "RivoirStep7_Reason",
+    "RivoirStep8_Contact",
+  ]
+  const firedStepsRef = useRef<Set<number>>(new Set())
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const eventName = STEP_EVENTS[step - 1]
+    if (!eventName || firedStepsRef.current.has(step)) return
+    let sessionFired: string[] = []
+    try { sessionFired = JSON.parse(window.sessionStorage.getItem("rivoir_steps_fired") || "[]") } catch {}
+    if (sessionFired.includes(eventName)) { firedStepsRef.current.add(step); return }
+    const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq
+    if (typeof fbq !== "function") return
+    fbq("trackCustom", eventName, { step_number: step, content_name: "Rivoir Survey", content_category: "real_estate" })
+    firedStepsRef.current.add(step)
+    try { window.sessionStorage.setItem("rivoir_steps_fired", JSON.stringify([...sessionFired, eventName])) } catch {}
+  }, [step])
+
   const handleNext = async () => {
     // Block out-of-area addresses on Continue with a disqualify screen
     if (step === 1 && addressOutOfArea) {
