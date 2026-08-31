@@ -2,6 +2,7 @@ import Image from "next/image"
 import { CheckCircle2, Phone, MessageSquare } from "lucide-react"
 import config from "@/lib/config"
 import { ClickToPlayVideo } from "@/components/thankyou/click-to-play-video"
+import { AutoplaySoundVideo } from "@/components/thankyou/autoplay-sound-video"
 
 // Per-client env vars (read on the server). All optional — when unset, the
 // page falls back to the original simpler layout so non-ABQ clients are
@@ -255,6 +256,11 @@ function ThankYouV1() {
             The {config.companyName} team has received your information and will be in touch within{" "}
             <strong>24 hours</strong> with your cash offer. In the meantime, here are answers to common questions.
           </p>
+        </div>
+
+        {/* Standalone welcome video */}
+        <div className="mb-8">
+          <AutoplaySoundVideo src="https://q0htkxebyzubsyx9.public.blob.vercel-storage.com/Jamie%20Rivoir%201%20%281%29%20EDITED.mp4" />
         </div>
 
         {/* Video section */}
